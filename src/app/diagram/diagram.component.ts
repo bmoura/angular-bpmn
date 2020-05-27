@@ -19,7 +19,7 @@ import { catchError } from 'rxjs/operators';
  *                to navigate them
  * bpmn-modeler - bootstraps a full-fledged BPMN editor
  */
-import * as BpmnJS from 'bpmn-js/dist/bpmn-modeler.development.js';
+import * as BpmnJS from 'bpmn-js/dist/bpmn-modeler.development';
 
 import { importDiagram } from './rx';
 
@@ -40,7 +40,11 @@ import { throwError } from 'rxjs';
   ]
 })
 export class DiagramComponent implements AfterContentInit, OnChanges, OnDestroy {
+
   private bpmnJS: BpmnJS;
+
+  private InteractionLogger: Function;
+
 
   @ViewChild('ref') private el: ElementRef;
 
@@ -48,7 +52,28 @@ export class DiagramComponent implements AfterContentInit, OnChanges, OnDestroy 
 
   constructor(private http: HttpClient) {
 
-    this.bpmnJS = new BpmnJS();
+    this.InteractionLogger = (eventBus: BpmnJS.EventBus) => {
+
+      eventBus.on('element.click', function (event: BpmnJS.InternalEvent, bar) {
+        console.log(bar)
+      });
+
+      eventBus.on('shape.move.end', function (event, bar) {
+        console.log(event, bar)
+      });
+
+      eventBus.on('import.parse.complete', function (event, bar) {
+        console.log(event, bar)
+      });
+
+    }
+
+    this.bpmnJS = new BpmnJS({
+      additionalModules: [{
+        __init__: ['interactionLogger'],
+        interactionLogger: ['type', this.InteractionLogger]
+      }]
+    });
 
   }
 
@@ -71,21 +96,10 @@ export class DiagramComponent implements AfterContentInit, OnChanges, OnDestroy 
   /**
    * Load diagram from URL and emit completion event
    */
-  loadUrl(url: string) {
+  loadUrl(url: string){
 
-    return (
-      this.http.get(url, { responseType: 'text' }).pipe(
-        catchError(err => throwError(err)),
-        importDiagram(this.bpmnJS)
-      ).subscribe(
-        (warnings) => {
-          
-        },
-        (err) => {
-          
-        }
-      )
-    );
+    importDiagram(this.bpmnJS)
+
   }
 
 }

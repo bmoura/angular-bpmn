@@ -147,7 +147,7 @@ export const importDiagram = (bpmnJS: any) => {
       </bpmndi:BPMNLabelStyle>
     </bpmndi:BPMNDiagram>
   </definitions>`;
-  bpmnJS.importXML(xml, function (err, warnings) {
+  return bpmnJS.importXML(xml, function (err, warnings) {
     console.log(err, warnings);
   });
 }
